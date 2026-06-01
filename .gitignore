@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+
+.env
+venv/
+
+outputs/
+videos/
+
+*.mp4
+*.png
+*.jpg
