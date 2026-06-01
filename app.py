@@ -1,32 +1,40 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import os
+import torch
 
 app = FastAPI()
 
-class RequestData(BaseModel):
+# Load model once during startup
+print("Loading WAN model...")
+
+# Replace with actual WAN loading code
+model = None
+
+class GenerateRequest(BaseModel):
     prompt: str
+    negative_prompt: str = ""
+    num_frames: int = 81
 
 @app.get("/")
 def health():
     return {
-        "status": "running"
+        "status": "running",
+        "model_loaded": model is not None
     }
 
-@app.post("/predict")
-def predict(data: RequestData):
-    result = {
-        "output": f"Received: {data.prompt}"
+@app.post("/generate")
+async def generate_video(req: GenerateRequest):
+
+    if model is None:
+        return {
+            "success": False,
+            "message": "Model not loaded"
+        }
+
+    # Replace with WAN inference
+    output_path = "/tmp/output.mp4"
+
+    return {
+        "success": True,
+        "video_path": output_path
     }
-    return result
-
-if __name__ == "__main__":
-    import uvicorn
-
-    port = int(os.environ.get("PORT", 8080))
-
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=port
-    )
