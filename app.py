@@ -1,40 +1,52 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import JSONResponse
+import os
 import torch
 
 app = FastAPI()
 
-# Load model once during startup
-print("Loading WAN model...")
+MODEL_LOADED = False
+pipe = None
 
-# Replace with actual WAN loading code
-model = None
+@app.on_event("startup")
+async def startup():
 
-class GenerateRequest(BaseModel):
-    prompt: str
-    negative_prompt: str = ""
-    num_frames: int = 81
+    global pipe
+    global MODEL_LOADED
+
+    try:
+        from diffusers import DiffusionPipeline
+
+        pipe = DiffusionPipeline.from_pretrained(
+            "Wan-AI/Wan2.2-T2V-A14B",
+            torch_dtype=torch.bfloat16
+        )
+
+        pipe.enable_model_cpu_offload()
+
+        MODEL_LOADED = True
+
+    except Exception as e:
+        print(e)
 
 @app.get("/")
 def health():
     return {
         "status": "running",
-        "model_loaded": model is not None
+        "model_loaded": MODEL_LOADED
     }
 
 @app.post("/generate")
-async def generate_video(req: GenerateRequest):
-
-    if model is None:
-        return {
-            "success": False,
-            "message": "Model not loaded"
-        }
-
-    # Replace with WAN inference
-    output_path = "/tmp/output.mp4"
+async def generate(
+    prompt: str = Form(...)
+):
+    if not MODEL_LOADED:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "model not loaded"}
+        )
 
     return {
         "success": True,
-        "video_path": output_path
+        "prompt": prompt
     }
